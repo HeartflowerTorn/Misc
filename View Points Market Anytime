@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         View Points Market Anytime
 // @namespace    heartflower.torn.com
-// @version      1.0
+// @version      1.1
 // @description  View Torn's point market from hospital, jail or travelling!
 // @author       Heartflower [2626587]
 // @match        https://www.torn.com/pmarket.php*
@@ -34,6 +34,7 @@
     // Set some variables to use later
     let personalListings = [];
     let timestamp = 0;
+    let hospitalTimestamp = 0;
 
     // Find the info message on Torn
     function findMessage() {
@@ -58,7 +59,7 @@
 
         // If the points market is available, don't show the table
         if (!messageContent.includes('This area is unavailable')) {
-            console.log('The area is available');
+            console.log('Is available');
             return;
         }
 
@@ -84,8 +85,10 @@
         if (apiKey !== '') {
             if (highlightSelf === true) {
                 fetchLogs();
+                fetchHospitalTime();
             } else if (highlightSelf === false) {
                 fetchPointsMarket();
+                fetchHospitalTime();
             }
         } else {
             // If no API key is found, create a link to set one
@@ -134,9 +137,11 @@
 
             if (highlightSelf === true) {
                 fetchLogs();
+                fetchHospitalTime();
+            } else {
+                fetchPointsMarket();
+                fetchHospitalTime();
             }
-
-            fetchPointsMarket();
         } else {
             alert('No valid API key entered!');
         }
@@ -178,6 +183,90 @@
         })
             .catch(error => console.error('Error fetching data: ' + error));
     }
+
+    // Fetch and display the time remaining in the hospital
+    function fetchHospitalTime() {
+        console.log('Fetching hospital time');
+
+        let messageContainer = document.body.querySelector('.info-msg');
+        let message = messageContainer.querySelector('.msg');
+        if (!message) {
+            console.error(`Can't find message!`)
+            setTimeout(fetchHospitalTime, 100);
+            return;
+        }
+
+        let apiUrl = `https://api.torn.com/user/?selections=basic&key=${apiKey}&comment=ViewPointsMarketAnytime`;
+
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+            let status = data.status;
+            hospitalTimestamp = status.until;
+
+            console.log(messageContainer);
+            let timeRemaining = 0;
+
+            let timerElement = document.createElement('div');
+            timerElement.id = 'hf-pmv-hospital-timer';
+            timerElement.style.display = 'inline';
+            timerElement.style.paddingLeft = '4px';
+
+            message.appendChild(timerElement);
+
+            updateTimer();
+            setInterval(updateTimer, 100);
+        })
+            .catch(error => console.error('Error fetching data: ' + error));
+    }
+
+    // Function to calculate remaining time
+    function calculateTimeRemaining() {
+        let currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+        let timeDifference = hospitalTimestamp - currentTime;
+
+        if (timeDifference <= 0) {
+            return "You're out of the hospital!";
+        }
+
+        let days = Math.floor(timeDifference / (24 * 60 * 60));
+        let hours = Math.floor((timeDifference % (24 * 60 * 60)) / (60 * 60));
+        let minutes = Math.floor((timeDifference % (60 * 60)) / 60);
+        let seconds = timeDifference % 60;
+
+        let remainingTime = "You will be out of the hospital in ";
+
+        // Days
+        if (days > 0) {
+            remainingTime += `${days} ${days === 1 ? 'day' : 'days'}, `;
+        }
+
+        // Hours
+        if (hours > 0) {
+            remainingTime += `${hours} ${hours === 1 ? 'hour' : 'hours'}, `;
+        }
+
+        // Minutes
+        if (minutes > 0) {
+            remainingTime += `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} and `;
+        }
+
+        // Seconds
+        remainingTime += `${seconds} ${seconds === 1 ? 'second' : 'seconds'}`;
+
+        remainingTime += '.';
+
+        return remainingTime;
+    }
+
+    // Function to update timer display
+    function updateTimer(hospitalTimestamp) {
+        let timerElement = document.getElementById('hf-pmv-hospital-timer');
+        if (timerElement) {
+            timerElement.textContent = calculateTimeRemaining(hospitalTimestamp);
+        }
+    }
+
 
     // Create the table
     function createTable(data) {
