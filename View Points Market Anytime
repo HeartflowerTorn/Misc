@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         View Points Market Anytime
 // @namespace    heartflower.torn.com
-// @version      1.1
+// @version      1.2
 // @description  View Torn's point market from hospital, jail or travelling!
 // @author       Heartflower [2626587]
 // @match        https://www.torn.com/pmarket.php*
@@ -15,6 +15,9 @@
     // Set to 'true' if you want to highlight your own point listings
     // If set to 'true', you need a full access key, otherwise you need a public key
     let highlightSelf = true;
+
+    // Set to 'true' if you want to show a link to remove your API key
+    let removeKeyLink = true;
 
     // Fetch API key from storage
     let apiKey = '';
@@ -63,6 +66,12 @@
             return;
         }
 
+        let originalTitle = document.querySelector('h4#skip-to-content');
+
+        if (originalTitle) {
+            originalTitle.parentNode.remove();
+        }
+
         // Create the points market title as it's not usually there
         let titleContainer = document.createElement('div');
 
@@ -90,6 +99,54 @@
                 fetchPointsMarket();
                 fetchHospitalTime();
             }
+
+            if (removeKeyLink === true) {
+                let link = document.createElement('a');
+                link.href = '#'; // Set a placeholder href
+
+                if (highlightSelf === true) {
+                    link.textContent = ' Click here to remove your (full access) API key!';
+                } else if (highlightSelf === false) {
+                    console.log('Remove public');
+                    link.textContent = ' Click here to remove your (public) API key!';
+                }
+
+                // Add click event listener to the link
+                link.addEventListener('click', function(event) {
+                    event.preventDefault(); // Prevent the default link behavior
+
+                    if (highlightSelf === true) {
+                        localStorage.removeItem('hf-full-access-apiKey');
+                        alert('API key successfully removed!');
+                        link.remove();
+                    } else if (highlightSelf === false) {
+                        localStorage.removeItem('hf-public-apiKey');
+                        alert('API key successfully removed!');
+                        link.remove();
+                    }
+
+                    let enterLink = document.createElement('a');
+                    enterLink.href = '#'; // Set a placeholder href
+
+                    if (highlightSelf === true) {
+                        enterLink.textContent = ' Click here to enter your (full access) API key!';
+                    } else if (highlightSelf === false) {
+                        enterLink.textContent = ' Click here to enter your (public) API key!';
+                    }
+
+                    // Add click event listener to the link
+                    enterLink.addEventListener('click', function(event) {
+                        event.preventDefault(); // Prevent the default link behavior
+                        promptAPIKey();
+                        link.remove();
+                    });
+
+                    message.appendChild(enterLink);
+                });
+
+                message.appendChild(link);
+            }
+
         } else {
             // If no API key is found, create a link to set one
             console.error('API key not found!');
@@ -106,6 +163,7 @@
             link.addEventListener('click', function(event) {
                 event.preventDefault(); // Prevent the default link behavior
                 promptAPIKey();
+                link.remove();
             });
 
             message.appendChild(link);
@@ -133,6 +191,7 @@
             } else if (highlightSelf === false) {
                 localStorage.setItem('hf-public-apiKey', enterAPIKey);
             }
+
             alert('API key set succesfully');
 
             if (highlightSelf === true) {
@@ -212,7 +271,11 @@
             timerElement.style.display = 'inline';
             timerElement.style.paddingLeft = '4px';
 
-            message.appendChild(timerElement);
+            if (removeKeyLink === true) {
+                message.insertBefore(timerElement, message.lastChild);
+            } else if (removeKeyLink === false) {
+                message.appendChild(timerElement);
+            }
 
             updateTimer();
             setInterval(updateTimer, 100);
