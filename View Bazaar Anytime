@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         View Bazaar Anytime
 // @namespace    heartflower.torn.com
-// @version      1.0
-// @description  View Torn's bazaar from hospital, jail or travelling!
+// @version      1.2
+// @description  View anyone's bazaar from hospital, jail or travelling!
 // @author       Heartflower [2626587]
 // @match        https://www.torn.com/bazaar.php*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=torn.com
@@ -11,6 +11,10 @@
 (function() {
     'use strict';
 
+    // Set to 'true' if you want to show a link to remove your API key
+    let removeKeyLink = true;
+
+    // Change maximum calls you want to do here. If it says 40, but those 40 items have an UID, it'll actually be 80 calls.
     let maximumCalls = 40;
     let apiCallCount = 0;
 
@@ -44,6 +48,40 @@
 
                 if (apiKey !== '') {
                     fetchBazaarData();
+
+                    if (removeKeyLink === true) {
+                        let link = document.createElement('a');
+                        link.href = '#'; // Set a placeholder href
+
+                        link.textContent = ' Click here to remove your (public) API key!';
+
+                        // Add click event listener to the link
+                        link.addEventListener('click', function(event) {
+                            event.preventDefault(); // Prevent the default link behavior
+
+                            localStorage.removeItem('hf-public-apiKey');
+                            alert('API key successfully removed!');
+                            link.remove();
+
+                            let enterLink = document.createElement('a');
+                            enterLink.href = '#'; // Set a placeholder href
+
+                            enterLink.textContent = ' Click here to enter your (public) API key!';
+
+
+                            // Add click event listener to the link
+                            enterLink.addEventListener('click', function(event) {
+                                event.preventDefault(); // Prevent the default link behavior
+                                promptAPIKey();
+                                link.remove();
+                            });
+
+                            messageContent.appendChild(enterLink);
+                        });
+
+                        messageContent.appendChild(link);
+                    }
+
                 } else {
                     let link = document.createElement('a');
                     link.href = '#'; // Set a placeholder href
