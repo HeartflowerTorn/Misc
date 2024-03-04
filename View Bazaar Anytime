@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         View Bazaar Anytime
 // @namespace    heartflower.torn.com
-// @version      1.2
+// @version      1.1
 // @description  View anyone's bazaar from hospital, jail or travelling!
 // @author       Heartflower [2626587]
 // @match        https://www.torn.com/bazaar.php*
